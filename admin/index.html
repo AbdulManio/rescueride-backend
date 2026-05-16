@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RescueRide Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    header h1 { font-size: 24px; }
+    header h1 span { color: #e94560; }
+
+    .admin-key-input {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .admin-key-input input {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      width: 220px;
+    }
+
+    .admin-key-input button {
+      padding: 8px 16px;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      padding: 20px 32px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px 24px;
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: 700;
+      color: #e94560;
+    }
+
+    .stat-card .label {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 32px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 24px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      background: #ddd;
+      color: #666;
+      border: none;
+    }
+
+    .tab.active {
+      background: white;
+      color: #e94560;
+    }
+
+    /* ── Main Content ── */
+    .content {
+      padding: 0 32px 32px;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* ── Rescuer Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 20px;
+    }
+
+    .rescuer-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+
+    .rescuer-card:hover { transform: translateY(-2px); }
+
+    .card-header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #e94560;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .card-header h3 { font-size: 16px; margin-bottom: 2px; }
+    .card-header p { font-size: 13px; opacity: 0.7; }
+
+    .status-badge {
+      margin-left: auto;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-approved { background: #d1e7dd; color: #0f5132; }
+    .status-rejected { background: #f8d7da; color: #842029; }
+
+    .card-body { padding: 16px 20px; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .info-row .key { color: #888; }
+    .info-row .value { font-weight: 600; color: #1a1a2e; }
+
+    .services-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    .service-tag {
+      background: #e94560;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ── Documents ── */
+    .documents {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .doc-preview {
+      flex: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #eee;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .doc-preview:hover { border-color: #e94560; }
+
+    .doc-preview img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+    }
+
+    .doc-label {
+      text-align: center;
+      font-size: 11px;
+      padding: 4px;
+      color: #666;
+      background: #f8f9fa;
+    }
+
+    .no-doc {
+      width: 100%;
+      height: 100px;
+      background: #f0f2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    /* ── Action Buttons ── */
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      padding: 12px 20px;
+      border-top: 1px solid #f0f2f5;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-approve { background: #198754; color: white; }
+    .btn-reject  { background: #dc3545; color: white; }
+    .btn-view    { background: #f0f2f5; color: #1a1a2e; }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: #666; }
+
+    /* ── Loading ── */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 16px;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 14px 24px;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+
+    .toast.show { opacity: 1; }
+    .toast.success { background: #198754; }
+    .toast.error   { background: #dc3545; }
+
+    /* ── Modal (document viewer) ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-overlay img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      object-fit: contain;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* ── Users Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    th {
+      background: #1a1a2e;
+      color: white;
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 14px;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8f9fa; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <h1>🚗 Rescue<span>Ride</span> Admin</h1>
+  <div class="admin-key-input">
+    <input type="password" id="adminKey" placeholder="Enter admin key..." />
+    <button onclick="loadDashboard()">Login</button>
+  </div>
+</header>
+
+<!-- Stats Bar -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-card">
+    <div class="number" id="statCustomers">-</div>
+    <div class="label">Total Customers</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statRescuers">-</div>
+    <div class="label">Total Rescuers</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statPending">-</div>
+    <div class="label">Pending Approval</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statApproved">-</div>
+    <div class="label">Approved Rescuers</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statRequests">-</div>
+    <div class="label">Total Requests</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statCompleted">-</div>
+    <div class="label">Completed Jobs</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs" id="tabsBar" style="display:none">
+  <button class="tab active" onclick="switchTab('pending')">⏳ Pending Approval</button>
+  <button class="tab" onclick="switchTab('all')">👥 All Users</button>
+</div>
+
+<!-- Content -->
+<div class="content">
+  <!-- Pending Rescuers -->
+  <div class="section active" id="section-pending">
+    <div id="pendingContainer" class="loading">Enter your admin key above to load data...</div>
+  </div>
+
+  <!-- All Users -->
+  <div class="section" id="section-all">
+    <div id="allUsersContainer" class="loading">Loading...</div>
+  </div>
+</div>
+
+<!-- Document Modal -->
+<div class="modal-overlay" id="docModal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img id="modalImg" src="" alt="Document" onclick="event.stopPropagation()" />
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────────────────
+  const API_BASE = 'http://localhost:5000/api';
+  let ADMIN_KEY = '';
+
+  // ── Load Dashboard ───────────────────────────────────────────────────────
+  async function loadDashboard() {
+    ADMIN_KEY = document.getElementById('adminKey').value;
+    if (!ADMIN_KEY) { showToast('Please enter admin key', 'error'); return; }
+
+    document.getElementById('statsBar').style.display = 'flex';
+    document.getElementById('tabsBar').style.display = 'flex';
+
+    await Promise.all([loadStats(), loadPendingRescuers(), loadAllUsers()]);
+  }
+
+  // ── Stats ────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    const data = await apiGet('/admin/stats');
+    if (!data) return;
+
+    const s = data.stats;
+    document.getElementById('statCustomers').textContent = s.users.totalCustomers;
+    document.getElementById('statRescuers').textContent = s.users.totalRescuers;
+    document.getElementById('statPending').textContent = s.users.pendingRescuers;
+    document.getElementById('statApproved').textContent = s.users.approvedRescuers;
+    document.getElementById('statRequests').textContent = s.requests.totalRequests;
+    document.getElementById('statCompleted').textContent = s.requests.completedRequests;
+  }
+
+  // ── Pending Rescuers ─────────────────────────────────────────────────────
+  async function loadPendingRescuers() {
+    document.getElementById('pendingContainer').innerHTML =
+      '<div class="loading">Loading pending rescuers...</div>';
+
+    const data = await apiGet('/admin/rescuers/pending');
+    if (!data) return;
+
+    const container = document.getElementById('pendingContainer');
+
+    if (data.rescuers.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">✅</div>
+          <h3>No Pending Approvals</h3>
+          <p>All rescuers have been reviewed.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="cards-grid">${data.rescuers.map(rescuerCard).join('')}</div>`;
+  }
+
+  // ── Rescuer Card HTML ────────────────────────────────────────────────────
+  function rescuerCard(r) {
+    const initial = (r.name || '?')[0].toUpperCase();
+    const services = (r.services || []).map(s =>
+      `<span class="service-tag">${s}</span>`).join('') || '<span style="color:#999;font-size:13px">No services listed</span>';
+
+    const cnicImg = r.cnicPhoto
+      ? `<img src="${r.cnicPhoto}" alt="CNIC" onclick="openModal('${r.cnicPhoto}')" />`
+      : `<div class="no-doc">No CNIC</div>`;
+
+    const licenseImg = r.licensePhoto
+      ? `<img src="${r.licensePhoto}" alt="License" onclick="openModal('${r.licensePhoto}')" />`
+      : `<div class="no-doc">No License</div>`;
+
+    const joinDate = new Date(r.createdAt).toLocaleDateString('en-PK');
+
+    return `
+      <div class="rescuer-card" id="card-${r._id}">
+        <div class="card-header">
+          <div class="avatar">${initial}</div>
+          <div>
+            <h3>${r.name || 'No Name'}</h3>
+            <p>${r.phone || ''}</p>
+          </div>
+          <span class="status-badge status-pending">Pending</span>
+        </div>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="key">Email</span>
+            <span class="value">${r.email || 'N/A'}</span>
+          </div>
+          <div class="info-row">
+            <span class="key">Shop Owner</span>
+            <span class="value">${r.isShopOwner ? '✅ Yes' : '❌ No'}</span>
+          </div>
+          <div class="info-row">
+            <span class="key">Joined</span>
+            <span class="value">${joinDate}</span>
+          </div>
+          <div class="services-list">${services}</div>
+          <div class="documents">
+            <div class="doc-preview">
+              ${cnicImg}
+              <div class="doc-label">CNIC Photo</div>
+            </div>
+            <div class="doc-preview">
+              ${licenseImg}
+              <div class="doc-label">License/Registration</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-approve" onclick="approveRescuer('${r._id}', '${r.name || 'Rescuer'}')">
+            ✅ Approve
+          </button>
+          <button class="btn btn-reject" onclick="rejectRescuer('${r._id}', '${r.name || 'Rescuer'}')">
+            ❌ Reject
+          </button>
+        </div>
+      </div>`;
+  }
+
+  // ── Approve Rescuer ───────────────────────────────────────────────────────
+  async function approveRescuer(id, name) {
+    if (!confirm(`Approve ${name}?`)) return;
+
+    const data = await apiPatch(`/admin/rescuers/${id}/approve`, {});
+    if (!data) return;
+
+    showToast(`✅ ${name} approved!`, 'success');
+    document.getElementById(`card-${id}`).remove();
+    loadStats();
+  }
+
+  // ── Reject Rescuer ────────────────────────────────────────────────────────
+  async function rejectRescuer(id, name) {
+    const reason = prompt(`Reason for rejecting ${name}:`);
+    if (reason === null) return;
+
+    const data = await apiPatch(`/admin/rescuers/${id}/reject`, {
+      reason: reason || 'Documents not clear. Please resubmit.'
+    });
+    if (!data) return;
+
+    showToast(`❌ ${name} rejected`, 'error');
+    document.getElementById(`card-${id}`).remove();
+    loadStats();
+  }
+
+  // ── All Users Table ───────────────────────────────────────────────────────
+  async function loadAllUsers() {
+    const data = await apiGet('/admin/users');
+    if (!data) return;
+
+    const container = document.getElementById('allUsersContainer');
+
+    if (data.users.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>No users found</h3></div>';
+      return;
+    }
+
+    const rows = data.users.map(u => `
+      <tr>
+        <td>${u.name || 'N/A'}</td>
+        <td>${u.phone || 'N/A'}</td>
+        <td>${u.email || 'N/A'}</td>
+        <td><span style="text-transform:capitalize;font-weight:600">${u.role}</span></td>
+        <td><span class="status-badge status-${u.accountStatus || 'pending'}">${u.accountStatus || 'N/A'}</span></td>
+        <td>${new Date(u.createdAt).toLocaleDateString('en-PK')}</td>
+      </tr>`).join('');
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Phone</th><th>Email</th>
+            <th>Role</th><th>Status</th><th>Joined</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ── Tab Switching ─────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(`section-${tab}`).classList.add('active');
+  }
+
+  // ── Document Modal ────────────────────────────────────────────────────────
+  function openModal(url) {
+    document.getElementById('modalImg').src = url;
+    document.getElementById('docModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('docModal').classList.remove('open');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── API Helpers ───────────────────────────────────────────────────────────
+  async function apiGet(endpoint) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        headers: { 'x-admin-key': ADMIN_KEY }
+      });
+      const data = await res.json();
+      if (!data.success) { showToast(data.message || 'Error', 'error'); return null; }
+      return data;
+    } catch (e) {
+      showToast('Connection error — is backend running?', 'error');
+      return null;
+    }
+  }
+
+  async function apiPatch(endpoint, body) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': ADMIN_KEY
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!data.success) { showToast(data.message || 'Error', 'error'); return null; }
+      return data;
+    } catch (e) {
+      showToast('Connection error', 'error');
+      return null;
+    }
+  }
+
+  // Allow Enter key to login
+  document.getElementById('adminKey').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') loadDashboard();
+  });
+</script>
+</body>
+</html>
