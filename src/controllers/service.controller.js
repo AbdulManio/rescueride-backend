@@ -217,3 +217,14 @@ exports.getNearbyRescuers = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch nearby rescuers' });
   }
 };
+exports.getRescuerRequests = async (req, res) => {
+  try {
+    const requests = await ServiceRequest.find({
+      rescuer: req.user._id,
+      status: { $in: ['accepted', 'in_progress'] },
+    }).populate('customer', 'name phone');
+    res.status(200).json({ success: true, requests });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch requests' });
+  }
+};
