@@ -50,11 +50,16 @@ exports.sendOtp = async (req, res) => {
 
     // Upsert: create user if first time, update OTP if returning
     let user = await User.findOneAndUpdate(
-      { phone },
-      { phone, role, otp, otpExpiry },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
+  { phone },
+  { 
+    phone, 
+    role, 
+    otp, 
+    otpExpiry,
+    accountStatus: role === 'customer' ? 'approved' : 'pending'
+  },
+  { upsert: true, new: true, setDefaultsOnInsert: true }
+);
     await sendOTP(phone, otp);
 
     res.status(200).json({
