@@ -1,6 +1,6 @@
 const { admin } = require('../config/firebase');
 const User = require('../models/User');
-
+const Notification = require('../models/Notification');
 // ─── Send notification to a single user by userId ────────────────────────────
 const sendNotificationToUser = async (userId, { title, body, data = {} }) => {
   try {
@@ -113,6 +113,20 @@ const notifyAccountRejected = (rescuerId, { reason }) =>
     body: reason || 'Your account was rejected. Please resubmit your documents.',
     data: { type: 'account_rejected' },
   });
+  // ─── Save notification to database ───────────────────────────────────────────
+const saveNotification = async (userId, { title, body, type, requestId }) => {
+  try {
+    await Notification.create({
+      user: userId,
+      title,
+      body,
+      type: type || 'new_offer',
+      requestId: requestId || null,
+    });
+  } catch (error) {
+    console.error('Save notification error:', error.message);
+  }
+};
 
 module.exports = {
   sendNotificationToUser,
@@ -125,4 +139,5 @@ module.exports = {
   notifyRequestCancelled,
   notifyAccountApproved,
   notifyAccountRejected,
+  saveNotification,
 };
