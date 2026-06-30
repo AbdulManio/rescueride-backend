@@ -155,10 +155,10 @@ exports.cancelRequest = async (req, res) => {
 exports.completeRequest = async (req, res) => {
   try {
     const request = await ServiceRequest.findOne({
-      _id: req.params.id,
-      rescuer: req.user._id,
-      status: 'in_progress',
-    });
+  _id: req.params.id,
+  rescuer: req.user._id,
+  status: { $in: ['accepted', 'in_progress'] },
+});
 
     if (!request) {
       return res.status(404).json({ success: false, message: 'Active request not found' });
