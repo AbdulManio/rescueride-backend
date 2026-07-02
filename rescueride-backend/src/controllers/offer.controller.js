@@ -1,14 +1,8 @@
-const { notifyNewOffer, notifyOfferAccepted, notifyRequestCancelled } = require('../services/notification.service');
+const { saveNotification } = require('../services/notification.service');
 const Offer = require('../models/Offer');
 const ServiceRequest = require('../models/ServiceRequest');
 const User = require('../models/User');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @route   POST /api/offers
-// @desc    Rescuer sends a fare offer on a request
-// @body    { requestId, counterFare, distanceKm, etaMinutes }
-// @access  Protected — rescuer only
-// ─────────────────────────────────────────────────────────────────────────────
 exports.sendOffer = async (req, res) => {
   try {
     const { requestId, counterFare, distanceKm, etaMinutes } = req.body;
@@ -26,7 +20,6 @@ exports.sendOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'This request is no longer accepting offers' });
     }
 
-    // Check if this rescuer already sent an offer for this request
     const existingOffer = await Offer.findOne({ request: requestId, rescuer: req.user._id });
     if (existingOffer) {
       return res.status(400).json({ success: false, message: 'You already sent an offer for this request' });
@@ -40,13 +33,19 @@ exports.sendOffer = async (req, res) => {
       etaMinutes: etaMinutes || null,
     });
 
-    // Move request status to negotiating
     request.status = 'negotiating';
     await request.save();
 
-    // Notify customer about the new offer
     const io = req.app.get('io');
     const rescuer = await User.findById(req.user._id).select('name rating profilePhoto');
+
+    await saveNotification(request.customer, {
+      title: '🚗 New Offer Received!',
+      body: `${rescuer.name} offered PKR ${counterFare} for your request`,
+      type: 'new_offer',
+      requestId,
+    });
+
     io.emitToUser(request.customer.toString(), 'new:offer', {
       offerId: offer._id,
       requestId,
@@ -63,16 +62,11 @@ exports.sendOffer = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @route   GET /api/offers/:requestId
-// @desc    Get all offers for a request (customer views rescuer offers)
-// @access  Protected — customer only
-// ─────────────────────────────────────────────────────────────────────────────
 exports.getOffersForRequest = async (req, res) => {
   try {
     const offers = await Offer.find({ request: req.params.requestId })
       .populate('rescuer', 'name phone rating profilePhoto location services')
-      .sort({ counterFare: 1 }); // sorted cheapest first
+      .sort({ counterFare: 1 });
 
     res.status(200).json({ success: true, offers });
   } catch (error) {
@@ -80,11 +74,6 @@ exports.getOffersForRequest = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @route   PATCH /api/offers/:offerId/accept
-// @desc    Customer accepts a specific offer
-// @access  Protected — customer only
-// ─────────────────────────────────────────────────────────────────────────────
 exports.acceptOffer = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.offerId).populate('request');
@@ -93,22 +82,18 @@ exports.acceptOffer = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Offer not found' });
     }
 
-    // Verify this customer owns the request
     if (offer.request.customer.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not your request' });
     }
 
-    // Accept this offer
     offer.status = 'accepted';
     await offer.save();
 
-    // Reject all other offers for the same request
     await Offer.updateMany(
       { request: offer.request._id, _id: { $ne: offer._id } },
       { status: 'rejected' }
     );
 
-    // Update the request
     const request = await ServiceRequest.findByIdAndUpdate(
       offer.request._id,
       {
@@ -121,15 +106,21 @@ exports.acceptOffer = async (req, res) => {
     );
 
     const io = req.app.get('io');
+    const customer = await User.findById(req.user._id).select('name');
 
-    // Notify the accepted rescuer
+    await saveNotification(offer.rescuer, {
+      title: '✅ Offer Accepted!',
+      body: `${customer.name || 'Customer'} accepted your offer of PKR ${offer.counterFare}`,
+      type: 'offer_accepted',
+      requestId: request._id,
+    });
+
     io.emitToUser(offer.rescuer.toString(), 'offer:accepted', {
       requestId: request._id,
       customerLocation: request.location,
       finalFare: offer.counterFare,
     });
 
-    // Notify other rescuers their offers were rejected
     const rejectedOffers = await Offer.find({
       request: offer.request._id,
       status: 'rejected',
