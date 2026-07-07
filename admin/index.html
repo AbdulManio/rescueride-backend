@@ -299,11 +299,56 @@
       </div>`).join('');
   }
 
-  async function openUserChat(userId, userName) {
+async function openUserChat(userId, userName) {
     selectedUserId = userId;
     document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
     document.getElementById(`chat-item-${userId}`)?.classList.add('active');
 
+    // Clear any existing refresh interval
+    if (window.chatRefreshInterval) {
+      clearInterval(window.chatRefreshInterval);
+    }
+
+    // Load chat first time
+    const data = await apiGet(`/support/chat/${userId}`);
+    if (!data) return;
+    const chatWindow = document.getElementById('chatWindow');
+    chatWindow.innerHTML = `
+      <div class="chat-window-header">
+        <span>💬</span>
+        <span>${userName}</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        ${data.messages.map(m => `
+          <div class="chat-msg ${m.sender}">
+            <div>${m.message}</div>
+            <div class="msg-time">${new Date(m.createdAt).toLocaleTimeString()}</div>
+          </div>`).join('')}
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="replyInput" placeholder="Type your reply..." onkeypress="if(event.key==='Enter') sendReply()" />
+        <button onclick="sendReply()">Send</button>
+      </div>`;
+
+    const msgs = document.getElementById('chatMessages');
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // Auto refresh every 5 seconds
+    window.chatRefreshInterval = setInterval(async () => {
+      if (selectedUserId !== userId) return;
+      const d = await apiGet(`/support/chat/${userId}`);
+      if (!d) return;
+      const m = document.getElementById('chatMessages');
+      if (!m) return;
+      const atBottom = m.scrollHeight - m.clientHeight <= m.scrollTop + 50;
+      m.innerHTML = d.messages.map(msg => `
+        <div class="chat-msg ${msg.sender}">
+          <div>${msg.message}</div>
+          <div class="msg-time">${new Date(msg.createdAt).toLocaleTimeString()}</div>
+        </div>`).join('');
+      if (atBottom) m.scrollTop = m.scrollHeight;
+    }, 5000);
+  }
     const data = await apiGet(`/support/chat/${userId}`);
     if (!data) return;
 
@@ -328,7 +373,7 @@
     // Scroll to bottom
     const msgs = document.getElementById('chatMessages');
     msgs.scrollTop = msgs.scrollHeight;
-  }
+  
 
   async function sendReply() {
     if (!selectedUserId) return;
@@ -351,12 +396,14 @@
   }
 
   function switchTab(tab, btn) {
+    if (window.chatRefreshInterval) clearInterval(window.chatRefreshInterval);
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(`section-${tab}`).classList.add('active');
     if (tab === 'support') loadSupportChats();
   }
+
 
   function openModal(url) {
     document.getElementById('modalImg').src = url;
