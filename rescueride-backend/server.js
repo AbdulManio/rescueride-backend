@@ -28,6 +28,7 @@ app.use('/api/ratings',       require('./src/routes/rating.routes'));
 app.use('/api/notifications', require('./src/routes/notification.routes'));
 app.use('/api/admin',         require('./src/routes/admin.routes'));
 app.use('/api/support',       require('./src/routes/support.routes'));
+app.use('/admin', require('express').static(require('path').join(__dirname, 'admin')));
 
 app.get('/', (req, res) => {
   res.json({ message: '🚗 RescueRide API is running', status: 'OK' });
@@ -49,4 +50,3 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 RescueRide server running on port ${PORT}`);
 });
-// v2.1
