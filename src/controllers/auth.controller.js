@@ -57,7 +57,7 @@ exports.sendOtp = async (req, res) => {
       success: true,
       message: 'OTP sent successfully',
       // Return OTP in dev mode so you can test without Twilio
-      ...(process.env.NODE_ENV === 'development' && { otp }),
+      otp,
     });
   } catch (error) {
     console.error('sendOtp error:', error);
