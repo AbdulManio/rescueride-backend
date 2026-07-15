@@ -10,23 +10,27 @@ const generateToken = (id) => {
 
 // ─── Helper: generate 4-digit OTP ─────────────────────────────────────────
 const generateOTP = () => {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 // ─── Helper: send OTP via Twilio ──────────────────────────────────────────
 const sendOTP = async (phone, otp) => {
-  // In development, just log it. Swap this for real Twilio in production.
   console.log(`📱 OTP for ${phone}: ${otp}`);
-
-  // Production Twilio code (uncomment when ready):
-  // const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-  // await twilio.messages.create({
-  //   body: `Your RescueRide verification code is: ${otp}`,
-  //   from: process.env.TWILIO_PHONE_NUMBER,
-  //   to: phone,
-  // });
+  try {
+    const twilio = require('twilio')(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    await twilio.messages.create({
+      body: `Your ResQRide verification code is: ${otp}. Valid for 5 minutes.`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phone,
+    });
+    console.log(`✅ SMS sent to ${phone}`);
+  } catch (e) {
+    console.log('SMS send failed:', e.message);
+  }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
 // @route   POST /api/auth/send-otp
 // @desc    Send 4-digit OTP to phone number
