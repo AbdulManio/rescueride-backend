@@ -16,6 +16,20 @@ const generateOTP = () => {
 // ─── Helper: send OTP via Twilio ──────────────────────────────────────────
 const sendOTP = async (phone, otp) => {
   console.log(`📱 OTP for ${phone}: ${otp}`);
+  try {
+    const twilio = require('twilio')(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    await twilio.messages.create({
+      body: `Your ResQRide verification code is: ${otp}. Valid for 5 minutes.`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phone,
+    });
+    console.log(`✅ SMS sent to ${phone}`);
+  } catch (e) {
+    console.log('SMS send failed:', e.message);
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
