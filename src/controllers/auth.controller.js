@@ -10,21 +10,12 @@ const generateToken = (id) => {
 
 // ─── Helper: generate 4-digit OTP ─────────────────────────────────────────
 const generateOTP = () => {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 // ─── Helper: send OTP via Twilio ──────────────────────────────────────────
 const sendOTP = async (phone, otp) => {
-  // In development, just log it. Swap this for real Twilio in production.
   console.log(`📱 OTP for ${phone}: ${otp}`);
-
-  // Production Twilio code (uncomment when ready):
-  // const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-  // await twilio.messages.create({
-  //   body: `Your RescueRide verification code is: ${otp}`,
-  //   from: process.env.TWILIO_PHONE_NUMBER,
-  //   to: phone,
-  // });
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,7 +57,7 @@ exports.sendOtp = async (req, res) => {
       success: true,
       message: 'OTP sent successfully',
       // Return OTP in dev mode so you can test without Twilio
-      ...(process.env.NODE_ENV === 'development' && { otp }),
+      otp,
     });
   } catch (error) {
     console.error('sendOtp error:', error);
