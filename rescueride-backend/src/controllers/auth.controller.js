@@ -31,6 +31,7 @@ const sendOTP = async (phone, otp) => {
     console.log('SMS send failed:', e.message);
   }
 };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // @route   POST /api/auth/send-otp
 // @desc    Send 4-digit OTP to phone number
