@@ -349,31 +349,7 @@ async function openUserChat(userId, userName) {
       if (atBottom) m.scrollTop = m.scrollHeight;
     }, 5000);
   }
-    const data = await apiGet(`/support/chat/${userId}`);
-    if (!data) return;
-
-    const chatWindow = document.getElementById('chatWindow');
-    chatWindow.innerHTML = `
-      <div class="chat-window-header">
-        <span>💬</span>
-        <span>${userName}</span>
-      </div>
-      <div class="chat-messages" id="chatMessages">
-        ${data.messages.map(m => `
-          <div class="chat-msg ${m.sender}">
-            <div>${m.message}</div>
-            <div class="msg-time">${new Date(m.createdAt).toLocaleTimeString()}</div>
-          </div>`).join('')}
-      </div>
-      <div class="chat-input-area">
-        <input type="text" id="replyInput" placeholder="Type your reply..." onkeypress="if(event.key==='Enter') sendReply()" />
-        <button onclick="sendReply()">Send</button>
-      </div>`;
-
-    // Scroll to bottom
-    const msgs = document.getElementById('chatMessages');
-    msgs.scrollTop = msgs.scrollHeight;
-  
+    
 
   async function sendReply() {
     if (!selectedUserId) return;
