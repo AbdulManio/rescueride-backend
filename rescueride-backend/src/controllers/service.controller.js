@@ -91,6 +91,26 @@ exports.getMyRequests = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch requests' });
   }
 };
+exports.getNearbyRequests = async (req, res) => {
+  try {
+    const rescuer = await User.findById(req.user._id);
+    if (!rescuer.location || !rescuer.isOnline) {
+      return res.status(200).json({ success: true, requests: [] });
+    }
+    const requests = await ServiceRequest.find({
+      status: { $in: ['searching', 'negotiating'] },
+      location: {
+        $near: {
+          $geometry: { type: 'Point', coordinates: rescuer.location.coordinates },
+          $maxDistance: 10000,
+        },
+      },
+    }).limit(10);
+    res.status(200).json({ success: true, requests });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch requests' });
+  }
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // @route   GET /api/services/active
