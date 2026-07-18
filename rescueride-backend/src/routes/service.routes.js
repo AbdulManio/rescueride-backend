@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createRequest,
   getMyRequests,
+  getNearbyRequests,
   getActiveRequest,
   cancelRequest,
   completeRequest,
