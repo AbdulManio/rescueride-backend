@@ -230,8 +230,11 @@ exports.getNearbyRequests = async (req, res) => {
       return res.status(200).json({ success: true, requests: [] });
     }
 
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
     const requests = await ServiceRequest.find({
       status: { $in: ['searching', 'negotiating'] },
+      createdAt: { $gte: twelveHoursAgo },
       location: {
         $near: {
           $geometry: { type: 'Point', coordinates: rescuer.location.coordinates },

@@ -95,7 +95,7 @@ exports.rescuerSetup = async (req, res) => {
         services: services || [],
         isShopOwner: isShopOwner || false,
         vehicleInfo: vehicleInfo || '',
-        accountStatus: 'pending',
+        accountStatus: currentUser.accountStatus === 'approved' ? 'approved' : 'pending',
       },
       { new: true }
     ).select('-otp -otpExpiry');
